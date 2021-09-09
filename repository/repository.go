@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"questionsandanswers/domain"
 
@@ -40,11 +39,9 @@ func (r MongoDbRepository) CreateQuestion(ctx context.Context, question domain.Q
 		return nil, err
 	}
 
-	fmt.Println(cursor)
+	question.ID = cursor.InsertedID.(primitive.ObjectID)
 
-	// question.ID = cursor.InsertedID
-
-	return nil, nil
+	return &question, nil
 }
 
 func (r MongoDbRepository) DeleteQuestion(ctx context.Context, id string) error {

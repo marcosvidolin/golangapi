@@ -25,20 +25,27 @@ func GetQuestionById(w http.ResponseWriter, r *http.Request) {
 
 	question, _ := questionService.FindQuestionById(context.TODO(), id)
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(question)
 }
 
 func GetAllQuestions(w http.ResponseWriter, r *http.Request) {
 	questions, _ := questionService.FindAllQuestions(context.TODO())
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(questions)
 }
 
 func GetQuestionByAuthor(w http.ResponseWriter, r *http.Request) {
 	author := r.FormValue("author")
 
-	questions, _ := questionService.FindQuestionsByAuthor(context.TODO(), author)
+	questions, err := questionService.FindQuestionsByAuthor(context.TODO(), author)
 
+	if err != nil {
+
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(questions)
 }
 
@@ -51,9 +58,11 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	questionService.CreateQuestion(context.TODO(), q)
 
 	if err != nil {
-		return // TODO:
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(q)
 }
 
@@ -64,21 +73,25 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&q)
 
 	if err != nil {
-		return // TODO: 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	q.ID, err = primitive.ObjectIDFromHex(vars["id"])
 
 	if err != nil {
-		return // TODO: 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	question, err := questionService.UpdateQuestion(context.TODO(), q)
 
 	if err != nil {
-		return // TODO: 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(question)
 }
 
@@ -89,9 +102,11 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	err := questionService.DeleteQuestion(context.TODO(), id)
 
 	if err != nil {
-		return // TODO: 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode("") // TODO: empty
 }
 
@@ -102,14 +117,16 @@ func CreateAnswer(w http.ResponseWriter, r *http.Request) {
 	question, err := questionService.FindQuestionById(context.TODO(), id)
 
 	if err != nil {
-		return // TODO 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	var a domain.Answer
 	err = json.NewDecoder(r.Body).Decode(&a)
 
 	if err != nil {
-		return // TODO: 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	answer := *domain.NewAnswer()
@@ -119,9 +136,11 @@ func CreateAnswer(w http.ResponseWriter, r *http.Request) {
 	q, err := questionService.UpdateQuestion(context.TODO(), *question)
 
 	if err != nil {
-		return // TODO 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(q)
 }
 
@@ -133,14 +152,16 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 	question, err := questionService.FindQuestionById(context.TODO(), id)
 
 	if err != nil {
-		return // TODO 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	var a domain.Answer
 	err = json.NewDecoder(r.Body).Decode(&a)
 
 	if err != nil {
-		return // TODO: 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	question.Answer.Body = a.Body
@@ -149,8 +170,10 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 	q, err := questionService.UpdateQuestion(context.TODO(), *question)
 
 	if err != nil {
-		return // TODO 500
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(q)
 }
