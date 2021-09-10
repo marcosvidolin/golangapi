@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type Answer struct {
-	Body      string    `json:"body" bson:"body,omitempty"`
+	Body      string    `json:"body,omitempty" bson:"body,omitempty"`
 	Author    User      `json:"author" bson:"author,omitempty"`
 	CreatedAt time.Time `json:"-" bson:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"-" bson:"updated_at"`

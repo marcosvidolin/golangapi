@@ -2,8 +2,7 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"errors"
 	"questionsandanswers/domain"
 	"questionsandanswers/repository"
 
@@ -20,10 +19,11 @@ func NewService(rep repository.Repository) Service {
 	}
 }
 
-func (s service) CreateQuestion(ctx context.Context, question domain.Question) (*domain.Question, error) {
-	q := domain.NewQuestion()
-	q.Body = question.Body
-	entity, err := s.repository.CreateQuestion(ctx, *q)
+func (s service) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
+
+	question.CreatedAt = time.Now()
+
+	entity, err := s.repository.CreateQuestion(ctx, question)
 
 	if err != nil {
 		return nil, err
@@ -35,11 +35,12 @@ func (s service) CreateQuestion(ctx context.Context, question domain.Question) (
 func (s service) UpdateQuestion(ctx context.Context, question domain.Question) (*domain.Question, error) {
 	q, err := s.FindQuestionById(ctx, question.ID.Hex())
 
-	fmt.Println(question.ID.Hex())
-
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
+	}
+
+	if q == nil {
+		return nil, nil
 	}
 
 	q.UpdatedAt = time.Now()
@@ -49,7 +50,6 @@ func (s service) UpdateQuestion(ctx context.Context, question domain.Question) (
 	qst, err := s.repository.UpdateQuestion(ctx, *q)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
@@ -60,7 +60,6 @@ func (s service) FindQuestionById(ctx context.Context, questionId string) (*doma
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
@@ -71,8 +70,12 @@ func (s service) FindAllQuestions(ctx context.Context) (*[]domain.Question, erro
 	q, err := s.repository.FindAllQuestions(ctx)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
+	}
+
+	if q == nil || len(*q) == 0 {
+		empty := make([]domain.Question, 0)
+		return &empty, nil
 	}
 
 	return q, nil
@@ -85,45 +88,58 @@ func (s service) FindQuestionsByAuthor(ctx context.Context, username string) (*[
 		return nil, err
 	}
 
+	if q == nil || len(*q) == 0 {
+		empty := make([]domain.Question, 0)
+		return &empty, nil
+	}
+
 	return q, nil
 }
 
-func (s service) CreateAnswer(ctx context.Context, questionId string, answer domain.Answer) (*domain.Question, error) {
+func (s service) CreateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
+	if q.Answer != (domain.Answer{}) {
+		return nil, domain.ErrorQuestionAnswered
+	}
+
 	answer.CreatedAt = time.Now()
-	q.Answer = answer
+	q.Answer = *answer
 
 	question, err := s.UpdateQuestion(ctx, *q)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
 	return question, nil
 }
 
-func (s service) UpdateAnswer(ctx context.Context, questionId string, answer domain.Answer) (*domain.Question, error) {
+func (s service) UpdateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
+	if q.Answer == (domain.Answer{}) {
+		return nil, domain.ErrorNoAnswerToUpdate
+	}
+
+	if q.Author.Username != answer.Author.Username {
+		return nil, errors.New("UNAUTHORIZED USER")
+	}
+
 	answer.UpdatedAt = time.Now()
-	q.Answer = answer // TODO: atualizar somente o body
+	q.Answer.Body = answer.Body
 
 	entity, err := s.repository.UpdateQuestion(ctx, *q)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
@@ -131,12 +147,5 @@ func (s service) UpdateAnswer(ctx context.Context, questionId string, answer dom
 }
 
 func (s service) DeleteQuestion(ctx context.Context, id string) error {
-	err := s.repository.DeleteQuestion(ctx, id)
-
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	return nil
+	return s.repository.DeleteQuestion(ctx, id)
 }

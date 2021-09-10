@@ -8,7 +8,7 @@ import (
 
 type Question struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Body      string             `json:"body" bson:"body,omitempty"`
+	Body      string             `json:"body,omitempty" bson:"body,omitempty"`
 	Answer    Answer             `json:"answer" bson:"answer"`
 	Author    User               `json:"author" bson:"author"`
 	CreatedAt time.Time          `json:"-" bson:"created_at,omitempty"`
@@ -19,6 +19,5 @@ func NewQuestion() *Question {
 	q := Question{}
 	q.ID = primitive.NewObjectID()
 	q.CreatedAt = time.Now()
-	q.Author = *NewUser()
 	return &q
 }
