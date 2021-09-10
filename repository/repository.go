@@ -16,7 +16,7 @@ type Repository interface {
 	FindQuestionById(ctx context.Context, id string) (*domain.Question, error)
 	FindAllQuestions(ctx context.Context) (*[]domain.Question, error)
 	FindQuestionByAuthor(ctx context.Context, username string) (*[]domain.Question, error)
-	UpdateQuestion(ctx context.Context, question domain.Question) (*domain.Question, error)
+	UpdateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error)
 }
 
 var dbclient *mongo.Client
@@ -118,12 +118,12 @@ func (r MongoDbRepository) FindQuestionByAuthor(ctx context.Context, username st
 	return &questions, nil
 }
 
-func (r MongoDbRepository) UpdateQuestion(ctx context.Context, question domain.Question) (*domain.Question, error) {
+func (r MongoDbRepository) UpdateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 	_, err := collection.ReplaceOne(ctx, bson.M{"_id": question.ID}, question)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &question, nil
+	return question, nil
 }

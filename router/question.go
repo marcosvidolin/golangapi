@@ -97,7 +97,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	var q domain.Question
+	var q *domain.Question
 	err := json.NewDecoder(r.Body).Decode(&q)
 
 	if err != nil {

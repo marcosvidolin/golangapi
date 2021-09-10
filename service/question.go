@@ -8,7 +8,7 @@ import (
 
 type Service interface {
 	CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error)
-	UpdateQuestion(ctx context.Context, question domain.Question) (*domain.Question, error)
+	UpdateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error)
 	DeleteQuestion(ctx context.Context, id string) error
 	FindQuestionById(ctx context.Context, id string) (*domain.Question, error)
 	FindAllQuestions(ctx context.Context) (*[]domain.Question, error)

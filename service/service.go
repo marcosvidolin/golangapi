@@ -19,7 +19,7 @@ func NewService(rep repository.Repository) Service {
 	}
 }
 
-func (s service) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
+func (s *service) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 
 	question.CreatedAt = time.Now()
 
@@ -32,7 +32,7 @@ func (s service) CreateQuestion(ctx context.Context, question *domain.Question) 
 	return entity, nil
 }
 
-func (s service) UpdateQuestion(ctx context.Context, question domain.Question) (*domain.Question, error) {
+func (s *service) UpdateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 	q, err := s.FindQuestionById(ctx, question.ID.Hex())
 
 	if err != nil {
@@ -47,7 +47,7 @@ func (s service) UpdateQuestion(ctx context.Context, question domain.Question) (
 	q.Body = question.Body
 	q.Answer = question.Answer
 
-	qst, err := s.repository.UpdateQuestion(ctx, *q)
+	qst, err := s.repository.UpdateQuestion(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (s service) UpdateQuestion(ctx context.Context, question domain.Question) (
 	return qst, nil
 }
 
-func (s service) FindQuestionById(ctx context.Context, questionId string) (*domain.Question, error) {
+func (s *service) FindQuestionById(ctx context.Context, questionId string) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
@@ -66,7 +66,7 @@ func (s service) FindQuestionById(ctx context.Context, questionId string) (*doma
 	return q, nil
 }
 
-func (s service) FindAllQuestions(ctx context.Context) (*[]domain.Question, error) {
+func (s *service) FindAllQuestions(ctx context.Context) (*[]domain.Question, error) {
 	q, err := s.repository.FindAllQuestions(ctx)
 
 	if err != nil {
@@ -81,7 +81,7 @@ func (s service) FindAllQuestions(ctx context.Context) (*[]domain.Question, erro
 	return q, nil
 }
 
-func (s service) FindQuestionsByAuthor(ctx context.Context, username string) (*[]domain.Question, error) {
+func (s *service) FindQuestionsByAuthor(ctx context.Context, username string) (*[]domain.Question, error) {
 	q, err := s.repository.FindQuestionByAuthor(ctx, username)
 
 	if err != nil {
@@ -96,7 +96,7 @@ func (s service) FindQuestionsByAuthor(ctx context.Context, username string) (*[
 	return q, nil
 }
 
-func (s service) CreateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
+func (s *service) CreateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
@@ -110,7 +110,7 @@ func (s service) CreateAnswer(ctx context.Context, questionId string, answer *do
 	answer.CreatedAt = time.Now()
 	q.Answer = *answer
 
-	question, err := s.UpdateQuestion(ctx, *q)
+	question, err := s.UpdateQuestion(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (s service) CreateAnswer(ctx context.Context, questionId string, answer *do
 	return question, nil
 }
 
-func (s service) UpdateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
+func (s *service) UpdateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
@@ -137,7 +137,7 @@ func (s service) UpdateAnswer(ctx context.Context, questionId string, answer *do
 	answer.UpdatedAt = time.Now()
 	q.Answer.Body = answer.Body
 
-	entity, err := s.repository.UpdateQuestion(ctx, *q)
+	entity, err := s.repository.UpdateQuestion(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -146,6 +146,6 @@ func (s service) UpdateAnswer(ctx context.Context, questionId string, answer *do
 	return entity, nil
 }
 
-func (s service) DeleteQuestion(ctx context.Context, id string) error {
+func (s *service) DeleteQuestion(ctx context.Context, id string) error {
 	return s.repository.DeleteQuestion(ctx, id)
 }
