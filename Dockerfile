@@ -18,7 +18,7 @@ COPY --from=build /app /app
 
 EXPOSE 8080
 
-#USER nonroot:nonroot
+USER nonroot:nonroot
 
 ENTRYPOINT ["./questionsandanswers"]
 
