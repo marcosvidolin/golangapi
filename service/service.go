@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"questionsandanswers/domain"
 	"questionsandanswers/repository"
 
@@ -21,6 +20,7 @@ func NewService(rep repository.Repository) Service {
 
 func (s *service) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 
+	question.Author = ctx.Value("user").(domain.User)
 	question.CreatedAt = time.Now()
 
 	entity, err := s.repository.CreateQuestion(ctx, question)
@@ -46,6 +46,11 @@ func (s *service) UpdateQuestion(ctx context.Context, question *domain.Question)
 	q.UpdatedAt = time.Now()
 	q.Body = question.Body
 	q.Answer = question.Answer
+
+	author := ctx.Value("user").(domain.User)
+	if q.Author.Username != author.Username {
+		return nil, domain.ErrorUnauthorizedUser
+	}
 
 	qst, err := s.repository.UpdateQuestion(ctx, q)
 
@@ -103,12 +108,12 @@ func (s *service) CreateAnswer(ctx context.Context, questionId string, answer *d
 		return nil, err
 	}
 
-	if q.Answer != (domain.Answer{}) {
-		return nil, domain.ErrorQuestionAnswered
-	}
+	author := ctx.Value("user").(domain.User)
+	answer.Author = author
 
-	answer.CreatedAt = time.Now()
-	q.Answer = *answer
+	if err = q.AddAnswer(answer); err != nil {
+		return nil, err
+	}
 
 	question, err := s.UpdateQuestion(ctx, q)
 
@@ -126,16 +131,12 @@ func (s *service) UpdateAnswer(ctx context.Context, questionId string, answer *d
 		return nil, err
 	}
 
-	if q.Answer == (domain.Answer{}) {
-		return nil, domain.ErrorNoAnswerToUpdate
-	}
+	author := ctx.Value("user").(domain.User)
+	answer.Author = author
 
-	if q.Author.Username != answer.Author.Username {
-		return nil, errors.New("UNAUTHORIZED USER")
+	if err = q.UpdateAnswer(answer); err != nil {
+		return nil, err
 	}
-
-	answer.UpdatedAt = time.Now()
-	q.Answer.Body = answer.Body
 
 	entity, err := s.repository.UpdateQuestion(ctx, q)
 
@@ -147,5 +148,17 @@ func (s *service) UpdateAnswer(ctx context.Context, questionId string, answer *d
 }
 
 func (s *service) DeleteQuestion(ctx context.Context, id string) error {
+	q, err := s.repository.FindQuestionById(ctx, id)
+
+	if err != nil {
+		return err
+	}
+
+	author := ctx.Value("user").(domain.User)
+
+	if q.Author.Username != author.Username {
+		return domain.ErrorUnauthorizedUser
+	}
+
 	return s.repository.DeleteQuestion(ctx, id)
 }

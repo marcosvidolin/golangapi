@@ -81,8 +81,9 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&q)
 
-	q.Author = GetCurrentUser()
-	questionService.CreateQuestion(context.TODO(), &q)
+	ctx := context.WithValue(context.Background(), "user", GetCurrentUser())
+
+	questionService.CreateQuestion(ctx, &q)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -112,8 +113,9 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	q.Author = GetCurrentUser()
-	question, err := questionService.UpdateQuestion(context.TODO(), q)
+	ctx := context.WithValue(context.Background(), "user", GetCurrentUser())
+
+	question, err := questionService.UpdateQuestion(ctx, q)
 
 	if errors.Is(err, domain.ErrorResourceNotFound) {
 		http.NotFound(w, r)
@@ -139,7 +141,9 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	err := questionService.DeleteQuestion(context.TODO(), id)
+	ctx := context.WithValue(context.Background(), "user", GetCurrentUser())
+
+	err := questionService.DeleteQuestion(ctx, id)
 
 	if errors.Is(err, domain.ErrorResourceNotFound) {
 		http.NotFound(w, r)
@@ -172,10 +176,10 @@ func CreateAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answer.Author = GetCurrentUser()
+	ctx := context.WithValue(context.Background(), "user", GetCurrentUser())
 
 	var q *domain.Question
-	q, err = questionService.CreateAnswer(context.TODO(), id, &answer)
+	q, err = questionService.CreateAnswer(ctx, id, &answer)
 
 	if errors.Is(err, domain.ErrorQuestionAnswered) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -209,9 +213,9 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.Author = GetCurrentUser()
+	ctx := context.WithValue(context.Background(), "user", GetCurrentUser())
 
-	q, err := questionService.UpdateAnswer(context.TODO(), id, &a)
+	q, err := questionService.UpdateAnswer(ctx, id, &a)
 
 	if errors.Is(err, domain.ErrorNoAnswerToUpdate) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)

@@ -5,5 +5,8 @@ import (
 )
 
 func GetCurrentUser() domain.User {
-	return *domain.NewUser()
+	return domain.User{
+		Username: "marcosvidolin",
+		Email:    "mvidolin@xpto.com",
+	}
 }

@@ -21,3 +21,32 @@ func NewQuestion() *Question {
 	q.CreatedAt = time.Now()
 	return &q
 }
+
+func (q *Question) AddAnswer(answer *Answer) error {
+
+	if q.Answer != (Answer{}) {
+		return ErrorQuestionAnswered
+	}
+
+	answer.CreatedAt = time.Now()
+
+	q.Answer = *answer
+
+	return nil
+}
+
+func (q *Question) UpdateAnswer(answer *Answer) error {
+
+	if q.Answer == (Answer{}) {
+		return ErrorNoAnswerToUpdate
+	}
+
+	if q.Author.Username != answer.Author.Username {
+		return ErrorUnauthorizedUser
+	}
+
+	q.Answer.Body = answer.Body
+	q.Answer.UpdatedAt = time.Now()
+
+	return nil
+}
