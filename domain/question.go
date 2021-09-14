@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -9,8 +10,8 @@ import (
 type Question struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Body      string             `json:"body,omitempty" bson:"body,omitempty"`
-	Answer    Answer             `json:"answer" bson:"answer"`
-	Author    User               `json:"author" bson:"author"`
+	Answer    Answer             `json:"answer,omitempty" bson:"answer"`
+	Author    User               `json:"author,omitempty" bson:"author"`
 	CreatedAt time.Time          `json:"-" bson:"created_at,omitempty"`
 	UpdatedAt time.Time          `json:"-" bson:"updated_at"`
 }
@@ -28,6 +29,10 @@ func (q *Question) AddAnswer(answer *Answer) error {
 		return ErrorQuestionAnswered
 	}
 
+	if len(strings.TrimSpace(answer.Body)) == 0 {
+		return ErrorContentRequired
+	}
+
 	answer.CreatedAt = time.Now()
 
 	q.Answer = *answer
@@ -39,6 +44,10 @@ func (q *Question) UpdateAnswer(answer *Answer) error {
 
 	if q.Answer == (Answer{}) {
 		return ErrorNoAnswerToUpdate
+	}
+
+	if len(strings.TrimSpace(answer.Body)) == 0 {
+		return ErrorContentRequired
 	}
 
 	if q.Author.Username != answer.Author.Username {

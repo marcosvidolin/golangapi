@@ -4,6 +4,7 @@ import (
 	"context"
 	"questionsandanswers/domain"
 	"questionsandanswers/repository"
+	"strings"
 
 	"time"
 )
@@ -19,6 +20,10 @@ func NewService(rep repository.Repository) Service {
 }
 
 func (s *service) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
+
+	if len(strings.TrimSpace(question.Body)) == 0 {
+		return nil, domain.ErrorContentRequired
+	}
 
 	question.Author = ctx.Value("user").(domain.User)
 	question.CreatedAt = time.Now()
@@ -41,6 +46,10 @@ func (s *service) UpdateQuestion(ctx context.Context, question *domain.Question)
 
 	if q == nil {
 		return nil, nil
+	}
+
+	if len(strings.TrimSpace(question.Body)) == 0 {
+		return nil, domain.ErrorContentRequired
 	}
 
 	q.UpdatedAt = time.Now()

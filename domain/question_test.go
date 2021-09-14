@@ -87,7 +87,7 @@ func TestUpdateAnswerUserUnauthorized(t *testing.T) {
 
 	author := User{Username: "anonymous"}
 
-	err := question.UpdateAnswer(&Answer{Author: author})
+	err := question.UpdateAnswer(&Answer{Author: author, Body: "Just do it..."})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, ErrorUnauthorizedUser, err)

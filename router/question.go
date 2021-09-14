@@ -34,7 +34,7 @@ func GetQuestionById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -52,7 +52,7 @@ func GetAllQuestions(w http.ResponseWriter, r *http.Request) {
 	questions, err := questionService.FindAllQuestions(context.TODO())
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -67,7 +67,7 @@ func GetQuestionByAuthor(w http.ResponseWriter, r *http.Request) {
 	questions, err := questionService.FindQuestionsByAuthor(context.TODO(), author)
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -83,14 +83,15 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.WithValue(context.Background(), "user", GetCurrentUser())
 
-	questionService.CreateQuestion(ctx, &q)
+	var question *domain.Question
+	question, err = questionService.CreateQuestion(ctx, &q)
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
-	json.NewEncoder(w).Encode(q)
+	json.NewEncoder(w).Encode(question)
 }
 
 func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
@@ -102,14 +103,14 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&q)
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
 	q.ID, err = primitive.ObjectIDFromHex(vars["id"])
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -117,18 +118,8 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	question, err := questionService.UpdateQuestion(ctx, q)
 
-	if errors.Is(err, domain.ErrorResourceNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-
-	if errors.Is(err, domain.ErrorUnauthorizedUser) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -145,18 +136,8 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 
 	err := questionService.DeleteQuestion(ctx, id)
 
-	if errors.Is(err, domain.ErrorResourceNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-
-	if errors.Is(err, domain.ErrorUnauthorizedUser) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -172,7 +153,7 @@ func CreateAnswer(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&answer)
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -181,18 +162,8 @@ func CreateAnswer(w http.ResponseWriter, r *http.Request) {
 	var q *domain.Question
 	q, err = questionService.CreateAnswer(ctx, id, &answer)
 
-	if errors.Is(err, domain.ErrorQuestionAnswered) {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
-	if errors.Is(err, domain.ErrorUnauthorizedUser) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -209,7 +180,7 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&a)
 
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		handleErros(err, w, r)
 		return
 	}
 
@@ -217,7 +188,24 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 
 	q, err := questionService.UpdateAnswer(ctx, id, &a)
 
-	if errors.Is(err, domain.ErrorNoAnswerToUpdate) {
+	if err != nil {
+		handleErros(err, w, r)
+		return
+	}
+
+	json.NewEncoder(w).Encode(q)
+}
+
+func handleErros(err error, w http.ResponseWriter, r *http.Request) {
+
+	if errors.Is(err, domain.ErrorResourceNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+
+	isBadRequest := errors.Is(err, domain.ErrorContentRequired) || errors.Is(err, domain.ErrorNoAnswerToUpdate) || errors.Is(err, domain.ErrorQuestionAnswered)
+
+	if isBadRequest {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -227,10 +215,5 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(q)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
