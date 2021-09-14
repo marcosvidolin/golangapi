@@ -8,17 +8,17 @@ import (
 	"time"
 )
 
-type service struct {
+type qaService struct {
 	repository repository.Repository
 }
 
 func NewService(rep repository.Repository) Service {
-	return &service{
+	return &qaService{
 		repository: rep,
 	}
 }
 
-func (s *service) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
+func (s *qaService) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 
 	question.Author = ctx.Value("user").(domain.User)
 	question.CreatedAt = time.Now()
@@ -32,7 +32,7 @@ func (s *service) CreateQuestion(ctx context.Context, question *domain.Question)
 	return entity, nil
 }
 
-func (s *service) UpdateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
+func (s *qaService) UpdateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 	q, err := s.FindQuestionById(ctx, question.ID.Hex())
 
 	if err != nil {
@@ -61,7 +61,7 @@ func (s *service) UpdateQuestion(ctx context.Context, question *domain.Question)
 	return qst, nil
 }
 
-func (s *service) FindQuestionById(ctx context.Context, questionId string) (*domain.Question, error) {
+func (s *qaService) FindQuestionById(ctx context.Context, questionId string) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
@@ -71,7 +71,7 @@ func (s *service) FindQuestionById(ctx context.Context, questionId string) (*dom
 	return q, nil
 }
 
-func (s *service) FindAllQuestions(ctx context.Context) (*[]domain.Question, error) {
+func (s *qaService) FindAllQuestions(ctx context.Context) (*[]domain.Question, error) {
 	q, err := s.repository.FindAllQuestions(ctx)
 
 	if err != nil {
@@ -86,7 +86,7 @@ func (s *service) FindAllQuestions(ctx context.Context) (*[]domain.Question, err
 	return q, nil
 }
 
-func (s *service) FindQuestionsByAuthor(ctx context.Context, username string) (*[]domain.Question, error) {
+func (s *qaService) FindQuestionsByAuthor(ctx context.Context, username string) (*[]domain.Question, error) {
 	q, err := s.repository.FindQuestionByAuthor(ctx, username)
 
 	if err != nil {
@@ -101,7 +101,7 @@ func (s *service) FindQuestionsByAuthor(ctx context.Context, username string) (*
 	return q, nil
 }
 
-func (s *service) CreateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
+func (s *qaService) CreateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
@@ -124,7 +124,7 @@ func (s *service) CreateAnswer(ctx context.Context, questionId string, answer *d
 	return question, nil
 }
 
-func (s *service) UpdateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
+func (s *qaService) UpdateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
 	if err != nil {
@@ -147,7 +147,7 @@ func (s *service) UpdateAnswer(ctx context.Context, questionId string, answer *d
 	return entity, nil
 }
 
-func (s *service) DeleteQuestion(ctx context.Context, id string) error {
+func (s *qaService) DeleteQuestion(ctx context.Context, id string) error {
 	q, err := s.repository.FindQuestionById(ctx, id)
 
 	if err != nil {
