@@ -2,33 +2,30 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
-
+	"os"
+	"os/signal"
 	"questionsandanswers/repository"
-	r "questionsandanswers/router"
+	"questionsandanswers/services"
 
-	"github.com/gorilla/mux"
+	"questionsandanswers/services/transport"
+	httpTransport "questionsandanswers/services/transport/http"
+	"syscall"
 )
 
-func HttpHandler() http.Handler {
-	router := mux.NewRouter()
-
-	router.HandleFunc("/questions/{id}", r.GetQuestionById).Methods("GET")
-	router.HandleFunc("/questions", r.GetQuestionByAuthor).Methods("GET").Queries("author", "{author}")
-	router.HandleFunc("/questions", r.GetAllQuestions).Methods("GET")
-	router.HandleFunc("/questions", r.CreateQuestion).Methods("POST")
-	router.HandleFunc("/questions/{id}", r.UpdateQuestion).Methods("PUT")
-	router.HandleFunc("/questions/{id}", r.DeleteQuestion).Methods("DELETE")
-
-	router.HandleFunc("/questions/{id}/answers", r.CreateAnswer).Methods("POST")
-	router.HandleFunc("/questions/{id}/answers", r.UpdateAnswer).Methods("PUT")
-
-	return router
-}
-
 func main() {
+
+	var (
+		httpAddr = flag.String("http.addr", ":8080", "HTTP listen address")
+	)
+
+	flag.Parse()
+
+	log.Println("Service started")
+	defer log.Println("Service ended")
 
 	dbclient, err := repository.GetMontoDbClient()
 
@@ -36,8 +33,26 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(dbclient.Connect(context.Background()))
+	log.Println(dbclient.Connect(context.Background()))
 
-	router := HttpHandler()
-	log.Fatal(http.ListenAndServe(":8080", router))
+	rep := repository.MongoDbRepository{}
+	s := services.NewService(rep)
+	errChan := make(chan error)
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+		errChan <- fmt.Errorf("%s", <-c)
+	}()
+
+	endpoints := transport.MakeEndpoints(s)
+
+	go func() {
+		log.Println("Listening on port: ", *httpAddr)
+		handler := httpTransport.NewService(endpoints)
+		errChan <- http.ListenAndServe(*httpAddr, handler)
+	}()
+
+	log.Default().Fatalln(<-errChan)
+
 }

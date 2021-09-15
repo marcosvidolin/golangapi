@@ -23,7 +23,6 @@ var dbclient *mongo.Client
 var collection *mongo.Collection
 
 type MongoDbRepository struct {
-	// mongodb driver
 }
 
 func init() {
