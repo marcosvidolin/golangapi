@@ -19,13 +19,29 @@ func NewService(endpoints transport.Endpoints) http.Handler {
 		router = mux.NewRouter()
 	)
 
+	router.Methods("GET").Path("/questions").Handler(kithttp.NewServer(
+		endpoints.GetAllQuestionsAndpoint,
+		decodeGetAllQuestionsRequest,
+		encodeResponse,
+	))
+
 	router.Methods("GET").Path("/questions/{id}").Handler(kithttp.NewServer(
 		endpoints.GetQuestionByIdEndpoint,
 		decodeGetQuestionByIdRequest,
 		encodeResponse,
 	))
 
+	router.Methods("GET").Path("/auestions").Queries("author", "{author}").Handler(kithttp.NewServer(
+		endpoints.GetQuestionsByAuthorEndpoint,
+		decodeGetQuestionsByAuthorRequest,
+		encodeResponse,
+	))
+
 	return router
+}
+
+func decodeGetAllQuestionsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	return transport.FindAllQuestionsRequest{}, nil
 }
 
 func decodeGetQuestionByIdRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -35,6 +51,11 @@ func decodeGetQuestionByIdRequest(_ context.Context, r *http.Request) (request i
 		return nil, domain.ErrorResourceNotFound
 	}
 	return transport.FindQuestionByIdRequest{ID: id}, nil
+}
+
+func decodeGetQuestionsByAuthorRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	author := r.FormValue("author")
+	return transport.FindQuestionsByAuthorRequest{Author: author}, nil
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
