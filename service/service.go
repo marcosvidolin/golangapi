@@ -13,12 +13,16 @@ type service struct {
 	repository repository.Repository
 }
 
+// Creates a new Service
 func NewService(rep repository.Repository) Service {
 	return &service{
 		repository: rep,
 	}
 }
 
+// Creates a domain.question
+// returns domainQuestion when there is no erros
+// returns error when some validation error occurs
 func (s *service) CreateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 
 	if len(strings.TrimSpace(question.Body)) == 0 {
@@ -37,6 +41,9 @@ func (s *service) CreateQuestion(ctx context.Context, question *domain.Question)
 	return entity, nil
 }
 
+// Updates a domain.question
+// returns domainQuestion when there is no erros
+// returns error when some validation error occurs
 func (s *service) UpdateQuestion(ctx context.Context, question *domain.Question) (*domain.Question, error) {
 	q, err := s.FindQuestionById(ctx, question.ID.Hex())
 
@@ -70,6 +77,9 @@ func (s *service) UpdateQuestion(ctx context.Context, question *domain.Question)
 	return qst, nil
 }
 
+// Gets a domain.Question by a given id
+// returns a domain.Question found
+// returns error when not found or something goes wrong
 func (s *service) FindQuestionById(ctx context.Context, questionId string) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
@@ -80,36 +90,43 @@ func (s *service) FindQuestionById(ctx context.Context, questionId string) (*dom
 	return q, nil
 }
 
-func (s *service) FindAllQuestions(ctx context.Context) (*[]domain.Question, error) {
+// Gets all domain.Question
+// returns all domain.Question found
+// returns error when some thing goes wrong
+func (s *service) FindAllQuestions(ctx context.Context) ([]domain.Question, error) {
 	q, err := s.repository.FindAllQuestions(ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if q == nil || len(*q) == 0 {
+	if len(*q) == 0 {
 		empty := make([]domain.Question, 0)
-		return &empty, nil
+		return empty, nil
 	}
 
-	return q, nil
+	return *q, nil
 }
 
-func (s *service) FindQuestionsByAuthor(ctx context.Context, username string) (*[]domain.Question, error) {
+// Gets all domain.Question by a author (username)
+// return a slice of domain.Questions found or an error when something goes wrong
+func (s *service) FindQuestionsByAuthor(ctx context.Context, username string) ([]domain.Question, error) {
 	q, err := s.repository.FindQuestionByAuthor(ctx, username)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if q == nil || len(*q) == 0 {
+	if len(*q) == 0 {
 		empty := make([]domain.Question, 0)
-		return &empty, nil
+		return empty, nil
 	}
 
-	return q, nil
+	return *q, nil
 }
 
+// Creates an domain.Answer for a given domain.Question
+// returns domain.Question with the domain.Answer or error when something goes wrong
 func (s *service) CreateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
@@ -133,6 +150,8 @@ func (s *service) CreateAnswer(ctx context.Context, questionId string, answer *d
 	return question, nil
 }
 
+// Updates an domain.Answer for a given domain.Question
+// returns domain.Question with the updated domain.Answer or error when something goes wrong
 func (s *service) UpdateAnswer(ctx context.Context, questionId string, answer *domain.Answer) (*domain.Question, error) {
 	q, err := s.repository.FindQuestionById(ctx, questionId)
 
@@ -156,6 +175,8 @@ func (s *service) UpdateAnswer(ctx context.Context, questionId string, answer *d
 	return entity, nil
 }
 
+// Remove a domain.Question
+// returns error when something goes wrong
 func (s *service) DeleteQuestion(ctx context.Context, id string) error {
 	q, err := s.repository.FindQuestionById(ctx, id)
 
