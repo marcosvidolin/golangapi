@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 
+	"questionsandanswers/domain"
 	"questionsandanswers/services"
 
 	"github.com/go-kit/kit/endpoint"
@@ -12,6 +13,7 @@ type Endpoints struct {
 	GetAllQuestionsAndpoint      endpoint.Endpoint
 	GetQuestionByIdEndpoint      endpoint.Endpoint
 	GetQuestionsByAuthorEndpoint endpoint.Endpoint
+	CreateQuestionEndpoint       endpoint.Endpoint
 }
 
 func MakeEndpoints(s services.Service) Endpoints {
@@ -19,6 +21,7 @@ func MakeEndpoints(s services.Service) Endpoints {
 		GetAllQuestionsAndpoint:      makeGetAllQuestionsEndpoint(s),
 		GetQuestionByIdEndpoint:      makeGetQuestionByIdEndpoint(s),
 		GetQuestionsByAuthorEndpoint: makeGetQuestionsByAuthorEndpoint(s),
+		CreateQuestionEndpoint:       makeCreateQuestionEndpoint(s),
 	}
 }
 
@@ -61,5 +64,23 @@ func makeGetQuestionsByAuthorEndpoint(s services.Service) endpoint.Endpoint {
 		}
 
 		return FindQuestionsByAuthorResponse{*q}, nil
+	}
+}
+
+func makeCreateQuestionEndpoint(s services.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(CreateQuestionRequest)
+
+		question := domain.Question{
+			Body: req.Body,
+		}
+
+		q, err := s.CreateQuestion(ctx, &question)
+
+		if err != nil {
+			return CreateQuestionResponse{*q}, err
+		}
+
+		return CreateQuestionResponse{*q}, err
 	}
 }

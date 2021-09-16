@@ -23,3 +23,11 @@ type FindQuestionsByAuthorRequest struct {
 type FindQuestionsByAuthorResponse struct {
 	Questions []domain.Question `json:"questions"`
 }
+
+type CreateQuestionRequest struct {
+	Body string `json:"body"`
+}
+
+type CreateQuestionResponse struct {
+	Question domain.Question `json:"questionn"`
+}
